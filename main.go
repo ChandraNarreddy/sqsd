@@ -25,11 +25,11 @@ func main() {
 	mimeType := flag.String("mime", "application/json", "mime type for the request; defaults to application/json")
 	maxRetries := flag.Int("maxRetries", 10, "max retries; default 10")
 	maxRetriesSQSDeletion := flag.Int("maxRetriesSQSDeletion", 1, "max retries for deletion of messages from SQS; default 1")
-	maxConcurrentConnections := flag.Int("concurrency", 50, "max concurrent connections to the upstream")
-	connectionTimeOutSecs := flag.Int("timeout", 5, "maximum connection timeout in seconds; default 5 seconds")
+	maxConcurrentConnections := flag.Int("maxConcurrentConns", 50, "max concurrent connections to the upstream")
+	connectionTimeOutSecs := flag.Int("connTimeout", 5, "maximum connection timeout in seconds; default 5 seconds")
 	responseTimeoutSecs := flag.Int("responseTimeout", 120, "maximum time to wait for response in seconds; default 120 seconds")
-	taskQBufferSize := flag.Int("buffer", 100, "Internal task queue's buffer size to hold incoming SQS messages; default 100")
-	workerPoolSize := flag.Int("workers", 20, "Number of concurrent workers to spawn; default 20")
+	taskQBufferSize := flag.Int("bufferSize", 100, "Internal task queue's buffer size to hold incoming SQS messages; default 100")
+	workerPoolSize := flag.Int("workersCount", 20, "Number of concurrent workers to spawn; default 20")
 	logLevel := flag.Int("logLevel", 0, "logging level. Pass -4 for DEBUG, 0 for INFO, 4 for WARN, 8 for ERROR; default 0 - INFO.")
 	flag.Parse()
 
@@ -81,7 +81,7 @@ func main() {
 					slog.Error("Error in fetching and pushing tasks to queue", "error", pollerErr.Error())
 				}
 			}
-			if br == true {
+			if br {
 				break
 			}
 		}
