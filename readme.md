@@ -42,7 +42,7 @@ $ sqsd -sqs zensqsd_test -forward http://localhost:8080/
 
 You can use docker images published here to invoke SQSD like so - 
 ```bash
-$ docker run -it --entrypoint /sqsd.cmd sqsd:latest -sqs <your_sqsq_name> -forward <your_upstream_worker_url>
+$ docker run -it --entrypoint /sqsd.cmd ghcr.io/chandranarreddy/sqsd:main -sqs <your_sqsq_name> -forward <your_upstream_worker_url>
 ```
 
 
