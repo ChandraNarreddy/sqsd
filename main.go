@@ -8,30 +8,13 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime"
-	"runtime/pprof"
 	"sqsd/sqspoll"
 	"sqsd/task"
 	"sqsd/taskQ"
 	"sqsd/workerpool"
-	"time"
 )
 
 func main() {
-
-	//profiling setup goes here
-	time := time.Now().UTC().Format("2006-01-02 15:04:05.999")
-	c, _ := os.Create("cpu_profile" + time + ".prof")
-	defer c.Close()
-	if cpuProfErr := pprof.StartCPUProfile(c); cpuProfErr != nil {
-		log.Fatal("could not start CPU profile: ", cpuProfErr)
-	}
-	defer pprof.StopCPUProfile()
-	m, _ := os.Create("mem_profile" + time + ".prof")
-	defer m.Close()
-	g, _ := os.Create("goroutine_profile" + time + ".prof")
-	defer g.Close()
-	//profiling end
 
 	queueName := flag.String("sqs", "", "SQS queue Name; mandatory ")
 	region := flag.String("region", "us-west-2", "region; us-west-2 is the default")
@@ -122,16 +105,6 @@ func main() {
 	quitSig := make(chan os.Signal, 1)
 	signal.Notify(quitSig, os.Interrupt, os.Kill)
 	<-quitSig
-
-	//profiling
-	runtime.GC()
-	if memProfErr := pprof.WriteHeapProfile(m); memProfErr != nil {
-		log.Fatal("could not write memory profile: ", memProfErr)
-	}
-	if goroutineProfErr := pprof.Lookup("goroutine").WriteTo(g, 0); goroutineProfErr != nil {
-		log.Fatal("could not write goroutine profile: ", goroutineProfErr)
-	}
-	//profiling
 
 	pollerQuitChan <- 1
 	close(pollerQuitChan)
