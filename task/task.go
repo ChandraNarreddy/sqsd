@@ -247,7 +247,6 @@ func CreateSQSDTaskPerformer(queueName string, region string, httpPath string, m
 			MaxConnsPerHost:   int(maxConcurrentConnections),
 		},
 	}
-	//Idea - Does it make sense to check here if the transport is successful? Perhaps not
 
 	cfg, cfgErr := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if cfgErr != nil {

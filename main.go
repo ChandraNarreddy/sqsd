@@ -8,30 +8,13 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime"
-	"runtime/pprof"
 	"sqsd/sqspoll"
 	"sqsd/task"
 	"sqsd/taskQ"
 	"sqsd/workerpool"
-	"time"
 )
 
 func main() {
-
-	//profiling setup goes here
-	time := time.Now().UTC().Format("2006-01-02 15:04:05.999")
-	c, _ := os.Create("cpu_profile" + time + ".prof")
-	defer c.Close()
-	if cpuProfErr := pprof.StartCPUProfile(c); cpuProfErr != nil {
-		log.Fatal("could not start CPU profile: ", cpuProfErr)
-	}
-	defer pprof.StopCPUProfile()
-	m, _ := os.Create("mem_profile" + time + ".prof")
-	defer m.Close()
-	g, _ := os.Create("goroutine_profile" + time + ".prof")
-	defer g.Close()
-	//profiling end
 
 	queueName := flag.String("sqs", "", "SQS queue Name; mandatory ")
 	region := flag.String("region", "us-west-2", "region; us-west-2 is the default")
@@ -42,11 +25,11 @@ func main() {
 	mimeType := flag.String("mime", "application/json", "mime type for the request; defaults to application/json")
 	maxRetries := flag.Int("maxRetries", 10, "max retries; default 10")
 	maxRetriesSQSDeletion := flag.Int("maxRetriesSQSDeletion", 1, "max retries for deletion of messages from SQS; default 1")
-	maxConcurrentConnections := flag.Int("concurrency", 50, "max concurrent connections to the upstream")
-	connectionTimeOutSecs := flag.Int("timeout", 5, "maximum connection timeout in seconds; default 5 seconds")
+	maxConcurrentConnections := flag.Int("maxConcurrentConns", 50, "max concurrent connections to the upstream")
+	connectionTimeOutSecs := flag.Int("connTimeout", 5, "maximum connection timeout in seconds; default 5 seconds")
 	responseTimeoutSecs := flag.Int("responseTimeout", 120, "maximum time to wait for response in seconds; default 120 seconds")
-	taskQBufferSize := flag.Int("buffer", 100, "Internal task queue's buffer size to hold incoming SQS messages; default 100")
-	workerPoolSize := flag.Int("workers", 20, "Number of concurrent workers to spawn; default 20")
+	taskQBufferSize := flag.Int("bufferSize", 100, "Internal task queue's buffer size to hold incoming SQS messages; default 100")
+	workerPoolSize := flag.Int("workersCount", 20, "Number of concurrent workers to spawn; default 20")
 	logLevel := flag.Int("logLevel", 0, "logging level. Pass -4 for DEBUG, 0 for INFO, 4 for WARN, 8 for ERROR; default 0 - INFO.")
 	flag.Parse()
 
@@ -98,7 +81,7 @@ func main() {
 					slog.Error("Error in fetching and pushing tasks to queue", "error", pollerErr.Error())
 				}
 			}
-			if br == true {
+			if br {
 				break
 			}
 		}
@@ -122,16 +105,6 @@ func main() {
 	quitSig := make(chan os.Signal, 1)
 	signal.Notify(quitSig, os.Interrupt, os.Kill)
 	<-quitSig
-
-	//profiling
-	runtime.GC()
-	if memProfErr := pprof.WriteHeapProfile(m); memProfErr != nil {
-		log.Fatal("could not write memory profile: ", memProfErr)
-	}
-	if goroutineProfErr := pprof.Lookup("goroutine").WriteTo(g, 0); goroutineProfErr != nil {
-		log.Fatal("could not write goroutine profile: ", goroutineProfErr)
-	}
-	//profiling
 
 	pollerQuitChan <- 1
 	close(pollerQuitChan)
