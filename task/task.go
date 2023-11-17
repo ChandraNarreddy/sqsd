@@ -20,15 +20,6 @@ import (
 
 type SQSTaskStatus uint8
 
-const (
-	ReceivedFromSQS SQSTaskStatus = iota
-	PushedToTaskQueue
-	PoppedFromTaskQueue
-	WaitingForAPIResponse
-	WorkerFailed
-	WorkerAbandoned
-)
-
 type TaskIfc interface {
 	GetSQSMessage() SQSTypes.Message
 	SetSQSMessage(SQSTypes.Message)
@@ -112,13 +103,13 @@ func (c *SQSDTaskPerformer) PerformTask(task TaskIfc) error {
 	SQSDTask, ok := task.(*SQSDTask)
 	if !ok {
 		slog.Error("Failed to perform task", "taskID", task.GetTaskID(), "error", "Task passed is not of type SQSDTask")
-		return fmt.Errorf("Task passed is not of type SQSDTask")
+		return fmt.Errorf("task passed is not of type SQSDTask")
 	}
 	if recvCount, ok := SQSDTask.sqsMessage.Attributes["ApproximateReceiveCount"]; ok {
 		count, convErr := strconv.Atoi(recvCount)
 		if convErr != nil {
 			slog.Error("Error performing task", "taskID", task.GetTaskID(), "error", fmt.Sprintf("ApproximateReceiveCount attribute in the message is not a valid integer - %#v", convErr.Error()))
-			return fmt.Errorf("Error while parsing ApproximateReceiveCount attribute in the message to an integer")
+			return fmt.Errorf("error while parsing ApproximateReceiveCount attribute in the message to an integer")
 		}
 		if count > int(c.maxRetries) {
 			slog.Debug("Max retries already attempted on this message, not attempting further", "messageID", *task.GetSQSMessage().MessageId)
@@ -129,7 +120,7 @@ func (c *SQSDTaskPerformer) PerformTask(task TaskIfc) error {
 	if reqErr != nil {
 		//error logging here
 		slog.Error("Error performing task", "taskID", task.GetTaskID(), "error", "Error while creating request to downstream")
-		return fmt.Errorf("Error while creating a request to the downstream")
+		return fmt.Errorf("error while creating a request to the downstream")
 	}
 	// add SQS message attributes as headers
 	req.Header.Add("User-Agent", "ZenSQSD")
@@ -167,7 +158,7 @@ func (c *SQSDTaskPerformer) PerformTask(task TaskIfc) error {
 		if opErr != nil {
 			slog.Error("Error changing visibility timeout on message", "messageID", *task.GetSQSMessage().MessageId, "error", opErr.Error())
 		}
-		return fmt.Errorf("Error obtaining response from upstream for message ID %#v", *task.GetSQSMessage().MessageId)
+		return fmt.Errorf("error obtaining response from upstream for message ID %#v", *task.GetSQSMessage().MessageId)
 	}
 	_, readBodyErr := io.ReadAll(resp.Body)
 	if readBodyErr != nil {
@@ -216,8 +207,8 @@ func (c *SQSDTaskPerformer) PerformTask(task TaskIfc) error {
 			break
 		}
 	}
-	if messageSuccessfullyDeleted == false {
-		return fmt.Errorf("Failed to delete message with ID %s from SQS", *task.GetSQSMessage().MessageId)
+	if !messageSuccessfullyDeleted {
+		return fmt.Errorf("failed to delete message with ID %s from SQS", *task.GetSQSMessage().MessageId)
 	}
 	return nil
 }

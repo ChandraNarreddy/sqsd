@@ -4,21 +4,22 @@
 
 SQSD is an open source implementation of AWS' SQS Daemon used in their Elastic BeanStalk worker tier environments.
 
-## Salient Features -
+## Salient Features
 
-* Employs a task queue model backed by go's channel-goroutines concurrency mechanism. Task queue's buffer and number of goroutines are both configurable.
+* Employs a task queue worker pool model backed by go's channel-goroutines concurrency mechanism.
+* Task queue's buffer size and number of goroutines are both configurable.
 * Upstream worker endpoint can be any legal URL as opposed to a locally bound server endpoint.
-* 
 
+## How to run
 
-## How to run - 
+* Ensure that AWS credentials are available as environment variables or in shared configuration files or as ec2 role credentials.
+* sqsd requires name of the sqs queue and URL address of the upstream as mandatory parameters.
 
-* Ensure that AWS credentials are available as environment variables or as ec2 role credentials.
-* sqsd requires the name of the sqs queue and the URL address to the workers as mandatory parameters.
 ```bash
-$ sqsd -sqs zensqsd_test -forward http://localhost:8080/
+% sqsd -sqs zensqsd_test -forward http://localhost:8080/
 ```
-#### Options
+
+### Options
 
 | **Argument**  |    **Default**     | **Required** |                                                   **Description**                                                    |
 |---|--------------|------------------------|----------------------------------------------------------------------------------------------------------------------|
@@ -38,11 +39,10 @@ $ sqsd -sqs zensqsd_test -forward http://localhost:8080/
 | -workersCount  | `20`                        | no           | Number of concurrent workers to spawn; default 20                                                                  |
 |  -logLevel | `0`                            | no           | logging level. Pass -4 for DEBUG, 0 for INFO, 4 for WARN, 8 for ERROR; default 0 - INFO.                                                                  |
 
-## Docker version -
+## Docker version
 
-You can use docker images published here to invoke SQSD like so - 
+You can use docker images published here to invoke SQSD like so -
+
 ```bash
-$ docker run -it --entrypoint /sqsd.cmd ghcr.io/chandranarreddy/sqsd:main -sqs <your_sqsq_name> -forward <your_upstream_worker_url>
+% docker run -it --entrypoint /sqsd.cmd ghcr.io/chandranarreddy/sqsd:main -sqs <your_sqsq_name> -forward <your_upstream_worker_url>
 ```
-
-

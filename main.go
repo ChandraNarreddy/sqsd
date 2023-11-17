@@ -12,6 +12,7 @@ import (
 	"sqsd/task"
 	"sqsd/taskQ"
 	"sqsd/workerpool"
+	"syscall"
 )
 
 func main() {
@@ -103,7 +104,7 @@ func main() {
 
 	//create a channel for OS interrupt events and listen for them
 	quitSig := make(chan os.Signal, 1)
-	signal.Notify(quitSig, os.Interrupt, os.Kill)
+	signal.Notify(quitSig, os.Interrupt, syscall.SIGTERM)
 	<-quitSig
 
 	pollerQuitChan <- 1
